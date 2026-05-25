@@ -4,14 +4,14 @@
  */
 
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db, isFirebaseMock } from './config';
+import { db, isFirebaseMock } from './config.js';
 
 // ═══════════════════════════════════
 // MOCK PATIENTS DATABASE (For Mock Mode & Offline Fallback)
 // ═══════════════════════════════════
-const MOCK_PATIENTS = {
-  '10000008': {
-    uid: '10000008',
+export const MOCK_PATIENTS = {
+  '100008': {
+    uid: '100008',
     name: 'Ramesh Kumar',
     village: 'Kengeri Village',
     district: 'Bangalore Urban',
@@ -35,8 +35,8 @@ const MOCK_PATIENTS = {
     },
     medicines: []
   },
-  '20000006': {
-    uid: '20000006',
+  '100016': {
+    uid: '100016',
     name: 'Lakshmi Gowda',
     village: 'Kengeri Village',
     district: 'Bangalore Urban',
@@ -62,8 +62,8 @@ const MOCK_PATIENTS = {
       { id: 'metformin_500', name: 'Metformin 500mg', dose: '1 tablet daily with dinner', frequency: 'Daily' }
     ]
   },
-  '30000004': {
-    uid: '30000004',
+  '100024': {
+    uid: '100024',
     name: 'Basavaraj Patil',
     village: 'Kengeri Village',
     district: 'Bangalore Urban',
@@ -94,7 +94,7 @@ const MOCK_PATIENTS = {
 
 /**
  * Checks if a patient UID exists in Firestore or locally in Mock mode.
- * @param {string} uid - 8-digit Health ID
+ * @param {string} uid - 6-digit Health ID
  * @returns {Promise<Object|null>} Patient document or null if not found
  */
 export async function checkPatientUID(uid) {

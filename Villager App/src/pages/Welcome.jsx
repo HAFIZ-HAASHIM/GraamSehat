@@ -4,12 +4,28 @@
  * Displays logo, localized taglines, a start button, and language selectors.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import useLanguage from '../hooks/useLanguage';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import { seedDemoDataToFirestore } from '../firebase/patients';
+import { Database, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function Welcome({ onGetStarted }) {
   const { t } = useLanguage();
+  const [seedingStatus, setSeedingStatus] = useState('idle'); // 'idle' | 'seeding' | 'success' | 'error'
+
+  const handleSeedData = async () => {
+    setSeedingStatus('seeding');
+    try {
+      await seedDemoDataToFirestore();
+      setSeedingStatus('success');
+      setTimeout(() => setSeedingStatus('idle'), 5000);
+    } catch (err) {
+      console.error(err);
+      setSeedingStatus('error');
+      setTimeout(() => setSeedingStatus('idle'), 5000);
+    }
+  };
 
   return (
     <div className="page-container welcome-page animate-fade-in">
@@ -46,6 +62,36 @@ export default function Welcome({ onGetStarted }) {
             onClick={onGetStarted}
           >
             {t('common.getStarted')}
+          </button>
+
+          <button
+            type="button"
+            className={`btn-secondary welcome-seed-btn ${seedingStatus}`}
+            onClick={handleSeedData}
+            disabled={seedingStatus === 'seeding'}
+            style={{ marginTop: '12px', fontSize: '14px', minHeight: '44px' }}
+          >
+            {seedingStatus === 'idle' && (
+              <>
+                <Database size={16} className="text-teal" />
+                <span>Initialize Demo Data in DB</span>
+              </>
+            )}
+            {seedingStatus === 'seeding' && (
+              <>
+                <Loader2 size={16} className="animate-spin text-teal" style={{ animation: 'spin 1s linear infinite' }} />
+                <span>Seeding Firestore...</span>
+              </>
+            )}
+            {seedingStatus === 'success' && (
+              <>
+                <CheckCircle2 size={16} className="text-success" />
+                <span className="text-success">Seeding Successful!</span>
+              </>
+            )}
+            {seedingStatus === 'error' && (
+              <span className="text-red">Error Seeding. Check console.</span>
+            )}
           </button>
         </div>
       </div>

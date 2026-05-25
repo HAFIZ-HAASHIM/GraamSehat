@@ -1,11 +1,11 @@
 /**
  * src/utils/uidValidator.js
- * Performs Luhn checksum validation on 8-digit Health IDs.
+ * Performs Luhn checksum validation on 6-digit Health IDs.
  */
 
 /**
- * Validates whether an 8-digit UID string passes the Luhn checksum.
- * @param {string} uidStr - The 8-digit UID to validate
+ * Validates whether a 6-digit UID string passes the Luhn checksum.
+ * @param {string} uidStr - The 6-digit UID to validate
  * @returns {boolean} True if valid
  */
 export function validateLuhn(uidStr) {
@@ -13,7 +13,7 @@ export function validateLuhn(uidStr) {
   
   // Clean input - only allow numbers
   const cleaned = uidStr.replace(/\D/g, '');
-  if (cleaned.length !== 8) return false;
+  if (cleaned.length !== 6) return false;
 
   let sum = 0;
   let shouldDouble = false; // Check digit (index 7) is not doubled

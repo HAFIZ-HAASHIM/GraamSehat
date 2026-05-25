@@ -1,7 +1,7 @@
 /**
  * src/pages/UIDEntry.jsx
  * Health ID entry screen.
- * Implements 8 individual inputs for the Health ID digits and performs
+ * Implements 6 individual inputs for the Health ID digits and performs
  * real-time Luhn checksum validation upon completion.
  */
 
@@ -12,7 +12,7 @@ import { validateLuhn } from '../utils/uidValidator';
 
 export default function UIDEntry({ onUIDSubmit, onBack }) {
   const { t } = useLanguage();
-  const [digits, setDigits] = useState(Array(8).fill(''));
+  const [digits, setDigits] = useState(Array(6).fill(''));
   const [errorMsg, setErrorMsg] = useState('');
   const [isValidated, setIsValidated] = useState(false);
   const inputRefs = useRef([]);
@@ -35,7 +35,7 @@ export default function UIDEntry({ onUIDSubmit, onBack }) {
     setIsValidated(false);
 
     // Auto-focus next input field
-    if (val && index < 7 && inputRefs.current[index + 1]) {
+    if (val && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
   };
@@ -55,11 +55,11 @@ export default function UIDEntry({ onUIDSubmit, onBack }) {
 
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 8);
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 6);
     if (pastedData.length === 0) return;
 
     const newDigits = [...digits];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       newDigits[i] = pastedData[i] || '';
     }
     setDigits(newDigits);
@@ -67,7 +67,7 @@ export default function UIDEntry({ onUIDSubmit, onBack }) {
     setIsValidated(false);
 
     // Focus last filled box
-    const focusIndex = Math.min(pastedData.length, 7);
+    const focusIndex = Math.min(pastedData.length, 5);
     if (inputRefs.current[focusIndex]) {
       inputRefs.current[focusIndex].focus();
     }
@@ -75,7 +75,7 @@ export default function UIDEntry({ onUIDSubmit, onBack }) {
 
   // Check if digits are fully entered
   const uidStr = digits.join('');
-  const isComplete = uidStr.length === 8;
+  const isComplete = uidStr.length === 6;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -110,7 +110,7 @@ export default function UIDEntry({ onUIDSubmit, onBack }) {
         <form onSubmit={handleSubmit} className="uid-input-form">
           <div className="uid-grid-wrapper">
             <div className={`uid-inputs-grid ${errorMsg ? 'shake-error' : ''}`}>
-              {Array.from({ length: 8 }).map((_, idx) => (
+              {Array.from({ length: 6 }).map((_, idx) => (
                 <input
                   key={idx}
                   ref={(el) => (inputRefs.current[idx] = el)}

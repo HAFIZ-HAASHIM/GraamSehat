@@ -4,13 +4,14 @@
  */
 
 import { collection, getDocs, doc, setDoc, addDoc, query, orderBy } from 'firebase/firestore';
-import { db, isFirebaseMock } from './config';
+import { db, isFirebaseMock } from './config.js';
+import { MOCK_PATIENTS } from './auth.js';
 
 // ═══════════════════════════════════
 // MOCK DATA FOR SCREENINGS & EDUCATION
 // ═══════════════════════════════════
-const MOCK_SCREENINGS = {
-  '10000008': [
+export const MOCK_SCREENINGS = {
+  '100008': [
     {
       date: '2026-04-15',
       riskLevel: 'GREEN',
@@ -23,7 +24,7 @@ const MOCK_SCREENINGS = {
       doctorsNote: 'Your health looks good. Maintain your physical activity and low-sugar diet.'
     }
   ],
-  '20000006': [
+  '100016': [
     {
       date: '2026-05-10',
       riskLevel: 'YELLOW',
@@ -47,7 +48,7 @@ const MOCK_SCREENINGS = {
       doctorsNote: 'All readings look normal. Continue daily brisk walks.'
     }
   ],
-  '30000004': [
+  '100024': [
     {
       date: '2026-05-25',
       riskLevel: 'RED',
@@ -133,14 +134,14 @@ const MOCK_EDUCATION = [
   }
 ];
 
-const MOCK_FAMILY = {
-  '10000008': [
-    { memberUID: '20000006', relation: 'Spouse', name: 'Lakshmi Gowda', riskLevel: 'YELLOW', lastCheckedDate: '2026-05-10' }
+export const MOCK_FAMILY = {
+  '100008': [
+    { memberUID: '100016', relation: 'Spouse', name: 'Lakshmi Gowda', riskLevel: 'YELLOW', lastCheckedDate: '2026-05-10' }
   ],
-  '20000006': [
-    { memberUID: '10000008', relation: 'Spouse', name: 'Ramesh Kumar', riskLevel: 'GREEN', lastCheckedDate: '2026-04-15' }
+  '100016': [
+    { memberUID: '100008', relation: 'Spouse', name: 'Ramesh Kumar', riskLevel: 'GREEN', lastCheckedDate: '2026-04-15' }
   ],
-  '30000004': []
+  '100024': []
 };
 
 /**
@@ -173,6 +174,41 @@ export async function fetchPatientScreenings(uid) {
     return MOCK_SCREENINGS[uid] || [];
   }
 }
+
+/**
+ * Fetches medicine logs (distributed medicines) for a patient.
+ * Query subcollection: patients/{uid}/medicines
+ * @param {string} uid - Patient Health ID
+ * @returns {Promise<Array>} List of medicine logs
+ */
+export async function fetchPatientMedicines(uid) {
+  if (isFirebaseMock) {
+    return MOCK_PATIENTS[uid]?.medicines || [];
+  }
+
+  try {
+    const snap = await getDocs(collection(db, 'patients', uid, 'medicines'));
+    const results = [];
+    snap.forEach((doc) => {
+      const data = doc.data();
+      results.push({
+        id: doc.id,
+        name: data.medicineName || data.name || '',
+        dose: data.dose || '',
+        frequency: data.frequency || 'Daily',
+        quantity: data.quantity || 0,
+        distributedAt: data.distributedAt || '',
+        nextDueDate: data.nextDueDate || '',
+        ...data
+      });
+    });
+    return results;
+  } catch (error) {
+    console.error('Firestore medicines fetch failed, using mock:', error);
+    return MOCK_PATIENTS[uid]?.medicines || [];
+  }
+}
+
 
 /**
  * Fetches health education articles from Firestore.
@@ -275,8 +311,8 @@ export async function addFamilyLink(primaryUID, memberUID, relation) {
       MOCK_FAMILY[primaryUID].push({
         memberUID,
         relation,
-        name: memberUID === '20000006' ? 'Lakshmi Gowda' : (memberUID === '10000008' ? 'Ramesh Kumar' : 'Family Member'),
-        riskLevel: memberUID === '20000006' ? 'YELLOW' : 'GREEN',
+        name: memberUID === '100016' ? 'Lakshmi Gowda' : (memberUID === '100008' ? 'Ramesh Kumar' : 'Family Member'),
+        riskLevel: memberUID === '100016' ? 'YELLOW' : 'GREEN',
         lastCheckedDate: '2026-05-10'
       });
     }
@@ -300,4 +336,50 @@ export async function addFamilyLink(primaryUID, memberUID, relation) {
     console.error('Firestore link writing failed:', error);
     return false;
   }
+}
+
+/**
+ * Seeds all mock patients, screenings, and family links directly to the live Firestore.
+ * Used for presentation and initialization in mock fallback or live modes.
+ */
+export async function seedDemoDataToFirestore() {
+  console.log('[Seeder] Seeding database...');
+  
+  // Seed Patients
+  for (const uid of Object.keys(MOCK_PATIENTS)) {
+    const patientData = MOCK_PATIENTS[uid];
+    const patientDocRef = doc(db, 'patients', uid);
+    await setDoc(patientDocRef, patientData);
+    
+    // Seed Screenings
+    const screenings = MOCK_SCREENINGS[uid] || [];
+    for (const screening of screenings) {
+      const screeningDocRef = doc(db, 'patients', uid, 'screenings', screening.date);
+      await setDoc(screeningDocRef, screening);
+    }
+  }
+
+  // Seed Family Links
+  for (const primaryUID of Object.keys(MOCK_FAMILY)) {
+    const members = MOCK_FAMILY[primaryUID] || [];
+    for (const m of members) {
+      const docRef = doc(db, 'familyLinks', primaryUID, 'members', m.memberUID);
+      await setDoc(docRef, {
+        memberUID: m.memberUID,
+        relation: m.relation,
+        addedAt: new Date().toISOString()
+      });
+
+      // reciprocal
+      const reciprocalRef = doc(db, 'familyLinks', m.memberUID, 'members', primaryUID);
+      await setDoc(reciprocalRef, {
+        memberUID: primaryUID,
+        relation: 'Family',
+        addedAt: new Date().toISOString()
+      });
+    }
+  }
+  
+  console.log('[Seeder] Seeding complete!');
+  return true;
 }
