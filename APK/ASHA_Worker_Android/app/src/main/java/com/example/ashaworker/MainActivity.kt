@@ -1,276 +1,319 @@
 package com.example.ashaworker
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.InputType
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.example.ashaworker.theme.ASHAWorkerTheme
+import android.widget.*
 
-class MainActivity : ComponentActivity() {
+class MainActivity : Activity() {
+    private lateinit var webView: WebView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var errorLayout: LinearLayout
+    private lateinit var errorText: TextView
+    private lateinit var urlInput: EditText
+    private lateinit var sharedPref: SharedPreferences
+    
+    private val defaultUrl = "http://10.0.2.2:3002"
+    private val prefKey = "asha_server_url"
+
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            ASHAWorkerTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+        
+        sharedPref = getSharedPreferences("GraamSehatPrefs", Context.MODE_PRIVATE)
+        val currentUrl = sharedPref.getString(prefKey, defaultUrl) ?: defaultUrl
+
+        // Root Layout (RelativeLayout)
+        val rootLayout = RelativeLayout(this).apply {
+            layoutParams = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            setBackgroundColor(Color.parseColor("#0F172A")) // Modern slate-900 background
+        }
+
+        // Header/Toolbar Layout (LinearLayout)
+        val header = LinearLayout(this).apply {
+            id = View.generateViewId()
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setBackgroundColor(Color.parseColor("#1E293B")) // Slate-800
+            setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12))
+            
+            val lp = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            lp.addRule(RelativeLayout.ALIGN_PARENT_TOP)
+            layoutParams = lp
+        }
+
+        // Title
+        val titleView = TextView(this).apply {
+            text = "GraamSehat ASHA Worker"
+            setTextColor(Color.WHITE)
+            textSize = 18f
+            typeface = Typeface.create("sans-serif-medium", Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f
+            )
+        }
+        header.addView(titleView)
+
+        // Refresh Button
+        val refreshBtn = Button(this).apply {
+            text = "🔄"
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setOnClickListener {
+                webView.reload()
+            }
+        }
+        header.addView(refreshBtn)
+
+        // Settings Button
+        val settingsBtn = Button(this).apply {
+            text = "⚙️"
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setOnClickListener {
+                showSettingsDialog()
+            }
+        }
+        header.addView(settingsBtn)
+        rootLayout.addView(header)
+
+        // WebView
+        webView = WebView(this).apply {
+            id = View.generateViewId()
+            val lp = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            lp.addRule(RelativeLayout.BELOW, header.id)
+            layoutParams = lp
+            
+            // Premium settings for React PWA apps
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.databaseEnabled = true
+            settings.allowFileAccess = true
+            settings.allowContentAccess = true
+            settings.loadWithOverviewMode = true
+            settings.useWideViewPort = true
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+            
+            webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    progressBar.visibility = View.VISIBLE
+                    errorLayout.visibility = View.GONE
+                }
+
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    progressBar.visibility = View.GONE
+                }
+
+                @Deprecated("Deprecated in Java")
+                override fun onReceivedError(
+                    view: WebView?,
+                    errorCode: Int,
+                    description: String?,
+                    failingUrl: String?
                 ) {
-                    PwaAppScreen(
-                        appName = "GraamSehat ASHA Worker",
-                        defaultUrl = "http://10.0.2.2:3002",
-                        prefKey = "asha_server_url",
-                        primaryColor = Color(0xFF0D9488) // Teal
-                    )
-                }
-            }
-        }
-    }
-}
-
-@SuppressLint("SetJavaScriptEnabled")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun PwaAppScreen(
-    appName: String,
-    defaultUrl: String,
-    prefKey: String,
-    primaryColor: Color
-) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val sharedPref = remember { context.getSharedPreferences("GraamSehatPrefs", Context.MODE_PRIVATE) }
-    
-    var currentUrl by remember {
-        mutableStateOf(sharedPref.getString(prefKey, defaultUrl) ?: defaultUrl)
-    }
-    
-    var webViewInstance by remember { mutableStateOf<WebView?>(null) }
-    var showSettingsDialog by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(true) }
-    var loadError by remember { mutableStateOf<String?>(null) }
-    
-    // Handle back press to navigate web history
-    BackHandler(enabled = webViewInstance?.canGoBack() == true) {
-        webViewInstance?.goBack()
-    }
-
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF0F172A))) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Elegant premium app header with refresh and settings buttons
-            TopAppBar(
-                title = {
-                    Text(
-                        appName,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { webViewInstance?.reload() }) {
-                        Text("🔄", fontSize = 18.sp)
-                    }
-                    IconButton(onClick = { showSettingsDialog = true }) {
-                        Text("⚙️", fontSize = 18.sp)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF1E293B)
-                )
-            )
-
-            Box(modifier = Modifier.fillMaxSize().weight(1f)) {
-                // The actual WebView
-                AndroidView(
-                    factory = { ctx ->
-                        WebView(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            webViewClient = object : WebViewClient() {
-                                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                                    isLoading = true
-                                    loadError = null
-                                }
-
-                                override fun onPageFinished(view: WebView?, url: String?) {
-                                    isLoading = false
-                                }
-
-                                override fun onReceivedError(
-                                    view: WebView?,
-                                    request: WebResourceRequest?,
-                                    error: WebResourceError?
-                                ) {
-                                    if (request?.isForMainFrame == true) {
-                                        isLoading = false
-                                        loadError = error?.description?.toString() ?: "Connection Failed"
-                                    }
-                                }
-                            }
-                            webChromeClient = WebChromeClient()
-                            
-                            // Essential settings for PWA/Web apps
-                            settings.javaScriptEnabled = true
-                            settings.domStorageEnabled = true
-                            settings.databaseEnabled = true
-                            settings.allowFileAccess = true
-                            settings.allowContentAccess = true
-                            settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            
-                            loadUrl(currentUrl)
-                            webViewInstance = this
-                        }
-                    },
-                    update = { webView ->
-                        if (webView.url != currentUrl) {
-                            webView.loadUrl(currentUrl)
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                // Sleek Loader overlay
-                if (isLoading) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xAA0F172A)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(color = primaryColor)
-                    }
+                    showError(description ?: "Connection failed")
                 }
 
-                // Premium modern error screen
-                if (loadError != null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color(0xFF0F172A))
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth().padding(16.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    "Connection Unreachable",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    "Could not connect to $currentUrl.\nMake sure your server is running and accessible on this network.",
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF94A3B8),
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Button(
-                                    onClick = { showSettingsDialog = true },
-                                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text("Configure Server URL")
-                                }
-                                Spacer(modifier = Modifier.height(8.dp))
-                                TextButton(
-                                    onClick = {
-                                        loadError = null
-                                        webViewInstance?.loadUrl(currentUrl)
-                                    }
-                                ) {
-                                    Text("Retry Connection", color = primaryColor)
-                                }
-                            }
-                        }
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        showError(error?.description?.toString() ?: "Connection failed")
                     }
                 }
             }
+            
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(consoleMessage: ConsoleMessage?): Boolean {
+                    android.util.Log.d("GraamSehatWebView", "${consoleMessage?.message()} -- line ${consoleMessage?.lineNumber()}")
+                    return true
+                }
+            }
+        }
+        rootLayout.addView(webView)
+
+        // Centered Progress Bar
+        progressBar = ProgressBar(this).apply {
+            val lp = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            lp.addRule(RelativeLayout.CENTER_IN_PARENT)
+            layoutParams = lp
+            visibility = View.VISIBLE
+        }
+        rootLayout.addView(progressBar)
+
+        // Custom Error Layout (Overlay when offline)
+        errorLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#0F172A"))
+            setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24))
+            
+            val lp = RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            lp.addRule(RelativeLayout.BELOW, header.id)
+            layoutParams = lp
+            visibility = View.GONE
         }
 
-        // Sleek configuration dialog
-        if (showSettingsDialog) {
-            var tempUrl by remember { mutableStateOf(currentUrl) }
-            AlertDialog(
-                onDismissRequest = { showSettingsDialog = false },
-                title = { Text("Configure PWA Server", color = Color.White) },
-                text = {
-                    Column {
-                        Text(
-                            "Enter the URL where your dev server is running. Examples:\n" +
-                            "• Emulator: http://10.0.2.2:3002\n" +
-                            "• Real Device: http://192.168.1.15:3002\n" +
-                            "• Live Server: https://graamsehat-d5ede.web.app",
-                            fontSize = 12.sp,
-                            color = Color(0xFF94A3B8)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedTextField(
-                            value = tempUrl,
-                            onValueChange = { tempUrl = it },
-                            label = { Text("Server URL") },
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White,
-                                focusedBorderColor = primaryColor,
-                                unfocusedBorderColor = Color(0xFF475569)
-                            ),
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            if (tempUrl.isNotBlank()) {
-                                sharedPref.edit().putString(prefKey, tempUrl).apply()
-                                currentUrl = tempUrl
-                                loadError = null
-                                webViewInstance?.loadUrl(tempUrl)
-                                showSettingsDialog = false
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
-                    ) {
-                        Text("Save & Load")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showSettingsDialog = false }) {
-                        Text("Cancel", color = Color(0xFF94A3B8))
-                    }
-                },
-                containerColor = Color(0xFF1E293B)
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(Color.parseColor("#1E293B")) // Card background
+            setPadding(dpToPx(24), dpToPx(24), dpToPx(24), dpToPx(24))
+            
+            val lp = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
             )
+            layoutParams = lp
         }
+
+        val errTitle = TextView(this).apply {
+            text = "Connection Unreachable"
+            setTextColor(Color.WHITE)
+            textSize = 20f
+            typeface = Typeface.DEFAULT_BOLD
+            gravity = Gravity.CENTER
+        }
+        card.addView(errTitle)
+
+        errorText = TextView(this).apply {
+            text = "Could not connect to $currentUrl"
+            setTextColor(Color.parseColor("#94A3B8"))
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setPadding(0, dpToPx(8), 0, dpToPx(16))
+        }
+        card.addView(errorText)
+
+        val configBtn = Button(this).apply {
+            text = "Configure Server IP"
+            setBackgroundColor(Color.parseColor("#0D9488")) // Teal primary
+            setTextColor(Color.WHITE)
+            setOnClickListener {
+                showSettingsDialog()
+            }
+        }
+        card.addView(configBtn)
+
+        val retryBtn = Button(this).apply {
+            text = "Retry"
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.parseColor("#0D9488"))
+            setOnClickListener {
+                val url = sharedPref.getString(prefKey, defaultUrl) ?: defaultUrl
+                errorLayout.visibility = View.GONE
+                webView.loadUrl(url)
+            }
+        }
+        card.addView(retryBtn)
+
+        errorLayout.addView(card)
+        rootLayout.addView(errorLayout)
+
+        setContentView(rootLayout)
+
+        // Load the saved URL
+        webView.loadUrl(currentUrl)
+    }
+
+    private fun showError(message: String) {
+        progressBar.visibility = View.GONE
+        val currentUrl = sharedPref.getString(prefKey, defaultUrl) ?: defaultUrl
+        errorText.text = "$message\n\nCould not connect to:\n$currentUrl\n\nMake sure your PC's dev server is running and your mobile is connected to the same Wi-Fi network."
+        errorLayout.visibility = View.VISIBLE
+    }
+
+    private fun showSettingsDialog() {
+        val currentUrl = sharedPref.getString(prefKey, defaultUrl) ?: defaultUrl
+        val builder = AlertDialog.Builder(this, AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+        builder.setTitle("Configure Server URL")
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dpToPx(24), dpToPx(8), dpToPx(24), dpToPx(8))
+        }
+
+        val hint = TextView(this).apply {
+            text = "Enter the server URL of your development computer. Examples:\n• Local network: http://192.168.1.15:3002\n• Emulator loopback: http://10.0.2.2:3002\n• Live site: https://graamsehat-d5ede.web.app"
+            setTextColor(Color.parseColor("#94A3B8"))
+            textSize = 12f
+            setPadding(0, 0, 0, dpToPx(12))
+        }
+        container.addView(hint)
+
+        urlInput = EditText(this).apply {
+            setText(currentUrl)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setTextColor(Color.WHITE)
+        }
+        container.addView(urlInput)
+
+        builder.setView(container)
+        builder.setPositiveButton("Save & Load") { dialog, _ ->
+            val enteredUrl = urlInput.text.toString().trim()
+            if (enteredUrl.isNotEmpty()) {
+                sharedPref.edit().putString(prefKey, enteredUrl).apply()
+                errorLayout.visibility = View.GONE
+                webView.loadUrl(enteredUrl)
+            }
+            dialog.dismiss()
+        }
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+        builder.show()
+    }
+
+    override fun onBackPressed() {
+        if (webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    private fun dpToPx(dp: Int): Int {
+        val density = resources.displayMetrics.density
+        return (dp * density).toInt()
     }
 }
