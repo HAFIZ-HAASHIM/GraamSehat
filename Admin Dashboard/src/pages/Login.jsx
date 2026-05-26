@@ -18,7 +18,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
-  const { currentAdmin } = useAdmin();
+  const { currentAdmin, setCurrentAdmin } = useAdmin();
   const navigate = useNavigate();
 
   // Redirect if already logged in
@@ -39,7 +39,10 @@ export default function Login() {
 
     try {
       setLoadingSubmit(true);
-      await loginAdmin(email.trim(), password.trim());
+      const adminData = await loginAdmin(email.trim(), password.trim());
+      if (setCurrentAdmin) {
+        setCurrentAdmin(adminData);
+      }
       navigate('/overview');
     } catch (err) {
       console.error(err);

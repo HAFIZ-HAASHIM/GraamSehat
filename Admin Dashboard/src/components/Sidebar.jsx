@@ -47,7 +47,11 @@ export default function Sidebar({ mobileOpen, toggleSidebar }) {
   return (
     <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
-        <Shield size={28} className="logo-icon" />
+        <svg viewBox="0 0 100 100" style={{ width: '28px', height: '28px', minWidth: '28px' }}>
+          <path d="M 50 82.5 C 50 82.5 22.5 61.5 22.5 42.5 C 22.5 30 32.5 20 45 20 C 50 20 54 22.5 56.5 25.5" fill="none" stroke="var(--accent-green, #10b981)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M 60 21.5 C 62.5 20 67.5 20 72.5 20 C 85 20 95 30 95 42.5 C 95 61.5 67.5 82.5 67.5 82.5 C 67.5 82.5 59.5 76.5 51 68" fill="none" stroke="var(--accent-green, #10b981)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M 23 57.5 L 39.5 57.5 L 45 39.5 L 50 75.5 L 55.5 48.5 L 60 61 L 67 57.5 L 77 57.5" fill="none" stroke="var(--accent-green, #10b981)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
         <div className="logo-text">
           <span className="brand-main">GraamSehat</span>
           <span className="brand-sub">Admin Portal</span>

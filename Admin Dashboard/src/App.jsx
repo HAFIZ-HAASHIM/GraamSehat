@@ -26,6 +26,7 @@ import Settings from './pages/Settings';
 // Layout Components
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import ErrorBoundary from './components/ErrorBoundary';
 
 /**
  * Route guard component to check for authenticated admin user.
@@ -76,36 +77,38 @@ function AdminProtectedRoute() {
 
 export default function App() {
   return (
-    <AdminProvider>
-      <Router>
-        <Routes>
-          {/* Public Login Route */}
-          <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <AdminProvider>
+        <Router>
+          <Routes>
+            {/* Public Login Route */}
+            <Route path="/login" element={<Login />} />
 
-          {/* Secure Admin Dashboard Routes */}
-          <Route element={<AdminProtectedRoute />}>
-            <Route path="/overview" element={<Overview />} />
-            <Route path="/map" element={<PatientMap />} />
-            <Route path="/rankings" element={<CityRankings />} />
-            <Route path="/search" element={<PatientSearch />} />
-            <Route path="/patient/:id" element={<PatientDetail />} />
-            <Route path="/asha" element={<ASHAManagement />} />
-            <Route path="/asha/:id" element={<ASHADetail />} />
-            <Route path="/approvals" element={<ApprovalQueue />} />
-            <Route path="/lost-found" element={<LostFound />} />
-            <Route path="/medicine" element={<MedicineStock />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/content" element={<HealthContent />} />
-            <Route path="/settings" element={<Settings />} />
-            
-            {/* Fallback secure redirect */}
-            <Route path="/" element={<Navigate to="/overview" replace />} />
-          </Route>
+            {/* Secure Admin Dashboard Routes */}
+            <Route element={<AdminProtectedRoute />}>
+              <Route path="/overview" element={<Overview />} />
+              <Route path="/map" element={<PatientMap />} />
+              <Route path="/rankings" element={<CityRankings />} />
+              <Route path="/search" element={<PatientSearch />} />
+              <Route path="/patient/:id" element={<PatientDetail />} />
+              <Route path="/asha" element={<ASHAManagement />} />
+              <Route path="/asha/:id" element={<ASHADetail />} />
+              <Route path="/approvals" element={<ApprovalQueue />} />
+              <Route path="/lost-found" element={<LostFound />} />
+              <Route path="/medicine" element={<MedicineStock />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/content" element={<HealthContent />} />
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Fallback secure redirect */}
+              <Route path="/" element={<Navigate to="/overview" replace />} />
+            </Route>
 
-          {/* Catch-all fallback */}
-          <Route path="*" element={<Navigate to="/overview" replace />} />
-        </Routes>
-      </Router>
-    </AdminProvider>
+            {/* Catch-all fallback */}
+            <Route path="*" element={<Navigate to="/overview" replace />} />
+          </Routes>
+        </Router>
+      </AdminProvider>
+    </ErrorBoundary>
   );
 }

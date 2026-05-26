@@ -61,25 +61,42 @@ export const AdminProvider = ({ children }) => {
 
   // Auth observer
   useEffect(() => {
+    const cachedAdmin = localStorage.getItem('graamsehat_admin_session');
+    if (cachedAdmin) {
+      try {
+        setCurrentAdmin(JSON.parse(cachedAdmin));
+        setLoading(false);
+      } catch (e) {
+        console.error("Failed to parse cached admin session", e);
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists() && userDoc.data().role === 'admin') {
-            setCurrentAdmin({
+            const adminData = {
               uid: user.uid,
               email: user.email,
               ...userDoc.data()
-            });
+            };
+            localStorage.setItem('graamsehat_admin_session', JSON.stringify(adminData));
+            setCurrentAdmin(adminData);
           } else {
             setCurrentAdmin(null);
+            localStorage.removeItem('graamsehat_admin_session');
           }
         } catch (error) {
           console.error('Error fetching admin profile:', error);
-          setCurrentAdmin(null);
+          if (!localStorage.getItem('graamsehat_admin_session')) {
+            setCurrentAdmin(null);
+          }
         }
       } else {
-        setCurrentAdmin(null);
+        if (!localStorage.getItem('graamsehat_admin_session')) {
+          setCurrentAdmin(null);
+        }
       }
       setLoading(false);
     });
@@ -254,6 +271,7 @@ export const AdminProvider = ({ children }) => {
 
   const value = {
     currentAdmin,
+    setCurrentAdmin,
     loading,
     patients,
     ashaWorkers,

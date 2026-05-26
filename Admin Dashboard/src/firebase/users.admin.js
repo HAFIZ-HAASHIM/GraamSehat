@@ -142,6 +142,20 @@ export const createRestockRequest = async (adminId, requestDetails) => {
       createdAt: serverTimestamp()
     });
     
+    // Immediately replenish the worker's stock levels in Firestore
+    const workerRef = doc(db, 'users', requestDetails.ashaWorkerId);
+    await updateDoc(workerRef, {
+      medicines: {
+        Metformin: 100,
+        Amlodipine: 100,
+        Atenolol: 100,
+        ORS: 100,
+        Iron: 100,
+        FolicAcid: 100
+      },
+      lastRestocked: serverTimestamp()
+    });
+
     // Log activity
     await logAdminActivity(adminId, 'CREATE_RESTOCK_REQUEST', {
       requestId: docRef.id,

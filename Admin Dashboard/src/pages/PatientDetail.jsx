@@ -22,6 +22,8 @@ import {
   Clock,
   Pill,
   UserPlus,
+  UserCheck,
+  TrendingUp,
   Save,
   MessageSquare
 } from 'lucide-react';

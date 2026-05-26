@@ -33,23 +33,18 @@ export default function Welcome({ onGetStarted }) {
         {/* Brand Logo & Presentation */}
         <div className="logo-container animate-float">
           <svg
-            viewBox="0 0 200 200"
+            viewBox="0 0 100 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="brand-svg-logo"
             width="120"
             height="120"
           >
-            <circle cx="100" cy="100" r="90" fill="#0D9488" fillOpacity="0.1" />
-            <circle cx="100" cy="100" r="75" fill="#0D9488" fillOpacity="0.2" />
-            {/* Heart symbol */}
-            <path
-              d="M100 135C100 135 140 105 140 80C140 63.4315 126.569 50 110 50C100.8 50 92.5 54.2 87 60.8C81.5 54.2 73.2 50 64 50C47.4315 50 34 63.4315 34 80C34 105 74 135 74 135L100 160L126 135"
-              fill="#0D9488"
-            />
-            {/* Health cross */}
-            <rect x="92" y="70" width="16" height="40" rx="8" fill="#FFFFFF" />
-            <rect x="80" y="82" width="40" height="16" rx="8" fill="#FFFFFF" />
+            <circle cx="50" cy="50" r="45" fill="#0D9488" fillOpacity="0.1" />
+            <circle cx="50" cy="50" r="38" fill="#0D9488" fillOpacity="0.2" />
+            <path d="M 50 82.5 C 50 82.5 22.5 61.5 22.5 42.5 C 22.5 30 32.5 20 45 20 C 50 20 54 22.5 56.5 25.5" fill="none" stroke="#0D9488" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M 60 21.5 C 62.5 20 67.5 20 72.5 20 C 85 20 95 30 95 42.5 C 95 61.5 67.5 82.5 67.5 82.5 C 67.5 82.5 59.5 76.5 51 68" fill="none" stroke="#0D9488" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M 23 57.5 L 39.5 57.5 L 45 39.5 L 50 75.5 L 55.5 48.5 L 60 61 L 67 57.5 L 77 57.5" fill="none" stroke="#0D9488" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
           <h1 className="welcome-app-name">{t('common.appName')}</h1>
           <p className="welcome-tagline">{t('common.tagline')}</p>

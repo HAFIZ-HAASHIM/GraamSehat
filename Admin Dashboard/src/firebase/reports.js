@@ -73,7 +73,7 @@ export const getScreeningSummaryReportData = async (startDate, endDate, district
 export const getHighRiskPatientReportData = async () => {
   try {
     const patientsRef = collection(db, 'patients');
-    const q = query(patientsRef, where('riskLevel', 'in', ['red', 'high']));
+    const q = query(patientsRef, where('riskLevel', 'in', ['red', 'high', 'RED', 'HIGH']));
     const querySnapshot = await getDocs(q);
     const results = [];
     
