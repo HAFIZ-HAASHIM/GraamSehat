@@ -97,7 +97,11 @@ export function generateHealthSummary(patient, medicines = [], lang = 'en') {
   // Doctors note translation fallback
   let docNote = '';
   if (patient.doctorsNote) {
-    docNote = patient.doctorsNote[lang] || patient.doctorsNote.en || '';
+    if (typeof patient.doctorsNote === 'string') {
+      docNote = patient.doctorsNote;
+    } else if (typeof patient.doctorsNote === 'object') {
+      docNote = patient.doctorsNote[lang] || patient.doctorsNote.en || patient.doctorsNote.explanation || '';
+    }
   }
 
   // Medicines formatting

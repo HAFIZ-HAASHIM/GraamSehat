@@ -19,7 +19,7 @@ export default function AddFamilyMember({ onBack }) {
   // Linking wizard states: 'RELATION' -> 'UID' -> 'OTP' -> 'SUCCESS'
   const [step, setStep] = useState('RELATION');
   const [relation, setRelation] = useState('Spouse');
-  const [digits, setDigits] = useState(Array(8).fill(''));
+  const [digits, setDigits] = useState(Array(6).fill(''));
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [targetPatient, setTargetPatient] = useState(null);
@@ -51,7 +51,7 @@ export default function AddFamilyMember({ onBack }) {
     setDigits(newDigits);
     setErrorMsg('');
 
-    if (val && index < 7 && inputRefs.current[index + 1]) {
+    if (val && index < 5 && inputRefs.current[index + 1]) {
       inputRefs.current[index + 1].focus();
     }
   };
@@ -70,24 +70,24 @@ export default function AddFamilyMember({ onBack }) {
 
   const handleUidPaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 8);
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').substring(0, 6);
     if (pastedData.length === 0) return;
 
     const newDigits = [...digits];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       newDigits[i] = pastedData[i] || '';
     }
     setDigits(newDigits);
     setErrorMsg('');
 
-    const focusIndex = Math.min(pastedData.length, 7);
+    const focusIndex = Math.min(pastedData.length, 5);
     if (inputRefs.current[focusIndex]) {
       inputRefs.current[focusIndex].focus();
     }
   };
 
   const uidStr = digits.join('');
-  const isUidComplete = uidStr.length === 8;
+  const isUidComplete = uidStr.length === 6;
 
   const handleUidSubmit = async (e) => {
     e.preventDefault();
@@ -215,7 +215,7 @@ export default function AddFamilyMember({ onBack }) {
             ) : (
               <>
                 <div className="uid-inputs-grid">
-                  {Array.from({ length: 8 }).map((_, idx) => (
+                  {Array.from({ length: 6 }).map((_, idx) => (
                     <input
                       key={idx}
                       ref={(el) => (inputRefs.current[idx] = el)}

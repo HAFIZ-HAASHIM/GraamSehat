@@ -6,7 +6,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { db } from '../db/localDB';
 import { checkPatientUID, logUnregisteredRequest } from '../firebase/auth';
-import { fetchPatientScreenings, fetchFamilyMembers, fetchEducationArticles, addFamilyLink } from '../firebase/patients';
+import { fetchPatientScreenings, fetchFamilyMembers, fetchEducationArticles, addFamilyLink, fetchPatientMedicines } from '../firebase/patients';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db as firestoreDB, isFirebaseMock } from '../firebase/config';
 import { LanguageContext } from './LanguageContext';
@@ -135,8 +135,6 @@ export const PatientProvider = ({ children }) => {
     try {
       const serverPat = await checkPatientUID(uid);
       if (serverPat) {
-        await cachePatientLocal(serverPat);
-        
         // Fetch Screenings
         const serverScr = await fetchPatientScreenings(uid);
         await db.screenings.where('uid').equals(uid).delete();
@@ -145,11 +143,62 @@ export const PatientProvider = ({ children }) => {
         }
 
         // Fetch Medicines
+        const serverMeds = await fetchPatientMedicines(uid);
         await db.medicines.where('uid').equals(uid).delete();
-        const medsList = serverPat.medicines || [];
-        for (const med of medsList) {
-          await db.medicines.add({ uid, ...med });
+        for (const med of serverMeds) {
+          await db.medicines.add({
+            uid,
+            id: med.id,
+            name: med.name || med.medicineName || '',
+            dose: med.dose || '',
+            frequency: med.frequency || 'Daily',
+            quantity: med.quantity || 0,
+            distributedAt: med.distributedAt || '',
+            nextDueDate: med.nextDueDate || ''
+          });
         }
+
+        // Determine the latest screening to update patient summary fields
+        const latestScr = serverScr.length > 0
+          ? [...serverScr].sort((a, b) => new Date(b.date) - new Date(a.date))[0]
+          : null;
+
+        if (latestScr) {
+          serverPat.riskLevel = latestScr.overallRisk || latestScr.riskLevel || serverPat.riskLevel;
+          serverPat.lastScreeningDate = latestScr.date ? latestScr.date.split('T')[0] : serverPat.lastScreeningDate;
+          serverPat.bpSystolic = latestScr.bpSystolic !== undefined ? latestScr.bpSystolic : serverPat.bpSystolic;
+          serverPat.bpDiastolic = latestScr.bpDiastolic !== undefined ? latestScr.bpDiastolic : serverPat.bpDiastolic;
+          serverPat.glucoseLevel = latestScr.glucoseLevel !== undefined ? latestScr.glucoseLevel : serverPat.glucoseLevel;
+          serverPat.idrsScore = latestScr.idrsScore !== undefined ? latestScr.idrsScore : serverPat.idrsScore;
+          if (latestScr.nextApptDate) {
+            serverPat.nextScreeningDate = latestScr.nextApptDate;
+          }
+          if (latestScr.doctorsNote) {
+            if (typeof latestScr.doctorsNote === 'string') {
+              serverPat.doctorsNote = {
+                en: latestScr.doctorsNote,
+                kn: latestScr.doctorsNote,
+                hi: latestScr.doctorsNote,
+                ta: latestScr.doctorsNote,
+                te: latestScr.doctorsNote
+              };
+            } else if (typeof latestScr.doctorsNote === 'object') {
+              if (latestScr.doctorsNote.explanation) {
+                serverPat.doctorsNote = {
+                  en: latestScr.doctorsNote.explanation,
+                  kn: latestScr.doctorsNote.explanation,
+                  hi: latestScr.doctorsNote.explanation,
+                  ta: latestScr.doctorsNote.explanation,
+                  te: latestScr.doctorsNote.explanation
+                };
+              } else {
+                serverPat.doctorsNote = latestScr.doctorsNote;
+              }
+            }
+          }
+        }
+
+        await cachePatientLocal(serverPat);
 
         // Fetch Family Links
         const serverFam = await fetchFamilyMembers(uid);

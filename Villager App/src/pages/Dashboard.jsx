@@ -27,7 +27,11 @@ export default function Dashboard({ patient, screenings, medicines, streak, onNa
   const getTruncatedAdvice = () => {
     let note = '';
     if (patient.doctorsNote) {
-      note = patient.doctorsNote[lang] || patient.doctorsNote.en || '';
+      if (typeof patient.doctorsNote === 'string') {
+        note = patient.doctorsNote;
+      } else if (typeof patient.doctorsNote === 'object') {
+        note = patient.doctorsNote[lang] || patient.doctorsNote.en || patient.doctorsNote.explanation || '';
+      }
     }
     if (!note) return 'Follow healthy lifestyle habits and visit local sub-centre for screenings.';
     return note.length > 90 ? `${note.substring(0, 90)}...` : note;

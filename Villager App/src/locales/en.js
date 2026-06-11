@@ -28,7 +28,7 @@ export default {
   },
   login: {
     headline: 'Enter your Health ID',
-    subheadline: 'Please enter your 8-digit unique Health ID below.',
+    subheadline: 'Please enter your 6-digit unique Health ID below.',
     invalidHealthId: 'Invalid Health ID. Check digits and try again.',
     checkingRecord: 'Checking your health record...'
   },
@@ -132,7 +132,7 @@ export default {
   addFamily: {
     title: 'Link Family Member',
     enterUid: 'Enter Family Member Health ID',
-    explain: 'Enter the 8-digit Health ID of your family member to link their account to this device.',
+    explain: 'Enter the 6-digit Health ID of your family member to link their account to this device.',
     successLink: 'Family member linked successfully!'
   },
   education: {
