@@ -147,3 +147,40 @@ export function getRiskAdvice(riskLevel, lang = "en") {
   const language = RISK_ADVICE[level] && RISK_ADVICE[level][lang] ? lang : "en";
   return RISK_ADVICE[level][language];
 }
+
+/**
+ * Calculates Anemia Risk Prediction based on Hemoglobin and Eye Scan score
+ * @param {number|string} hb - Hemoglobin level (g/dL)
+ * @param {number} eyeScore - Simulated conjunctiva pallor score (0-100)
+ * @param {string} gender - 'male' or 'female'
+ * @returns {string} LOW / MODERATE / HIGH
+ */
+export function calculateAnemiaRisk(hb, eyeScore, gender) {
+  let risk = "LOW";
+  
+  const hbValue = parseFloat(hb);
+  
+  // If hb is provided, calculate based on WHO criteria
+  if (!isNaN(hbValue)) {
+    const isMale = (gender && gender.toLowerCase() === "male");
+    const cutoff = isMale ? 13.0 : 12.0;
+    
+    if (hbValue < 8.0) {
+      risk = "HIGH";
+    } else if (hbValue < 11.0) {
+      risk = "MODERATE";
+    } else if (hbValue < cutoff) {
+      // Mild anemia, check eye score to bump risk
+      risk = eyeScore > 70 ? "MODERATE" : "LOW";
+    } else {
+      risk = "LOW";
+    }
+  } else if (eyeScore !== undefined && eyeScore !== null) {
+    // No Hb, rely solely on Eye Score
+    if (eyeScore > 80) risk = "HIGH";
+    else if (eyeScore > 60) risk = "MODERATE";
+    else risk = "LOW";
+  }
+  
+  return risk;
+}

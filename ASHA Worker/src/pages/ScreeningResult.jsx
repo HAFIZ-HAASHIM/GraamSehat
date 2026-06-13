@@ -47,6 +47,9 @@ export function ScreeningResult() {
     bpClassification,
     glucoseLevel,
     glucoseClassification,
+    hemaData,
+    eyeScore,
+    anemiaRiskLevel,
     riskLevel,
     overallRisk,
     symptoms
@@ -174,6 +177,26 @@ export function ScreeningResult() {
           </div>
           <span style={{ fontSize: "11px", fontWeight: "700", color: "var(--color-primary)" }}>
             {glucoseClassification}
+          </span>
+        </div>
+
+        {/* Anemia Details */}
+        <div className="glass-card" style={{ margin: 0, padding: "12px", textAlign: "center", gridColumn: "1 / -1" }}>
+          <div style={{ fontSize: "12px", color: "var(--color-text-secondary)", fontWeight: "600", textTransform: "uppercase" }}>
+            Anemia Risk Prediction
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-around", margin: "10px 0" }}>
+            <div>
+               <div style={{ fontSize: "10px", color: "var(--color-text-gray)"}}>Hemoglobin</div>
+               <div style={{ fontSize: "16px", fontWeight: "800", color: "var(--color-text-primary)" }}>{hemaData?.hb ? `${hemaData.hb} g/dL` : "N/A"}</div>
+            </div>
+            <div>
+               <div style={{ fontSize: "10px", color: "var(--color-text-gray)"}}>Eye Pallor Score</div>
+               <div style={{ fontSize: "16px", fontWeight: "800", color: "var(--color-text-primary)" }}>{eyeScore != null ? `${eyeScore}/100` : "N/A"}</div>
+            </div>
+          </div>
+          <span style={{ fontSize: "12px", fontWeight: "800", color: anemiaRiskLevel === "HIGH" ? "var(--color-red)" : anemiaRiskLevel === "MODERATE" ? "var(--color-yellow)" : "var(--color-green)" }}>
+            {anemiaRiskLevel ? anemiaRiskLevel + " RISK" : "UNKNOWN RISK"}
           </span>
         </div>
       </div>

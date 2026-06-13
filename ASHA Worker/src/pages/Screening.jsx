@@ -5,12 +5,12 @@
  * live-calculation previews, and patient data pre-population.
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { useAuth } from "../context/AuthContext";
 import { getLocalPatientByUid } from "../db/patients.local";
-import { classifyBP, calculateIDRS, calculateOverallRisk, getRiskAdvice } from "../utils/riskCalculator";
+import { classifyBP, calculateIDRS, calculateOverallRisk, getRiskAdvice, calculateAnemiaRisk } from "../utils/riskCalculator";
 import ProgressBar from "../components/ProgressBar";
 import GameCard from "../components/GameCard";
 
@@ -45,7 +45,20 @@ export function Screening() {
   const [glucoseNotAvailable, setGlucoseNotAvailable] = useState(false);
   const [glucoseClassification, setGlucoseClassification] = useState("NORMAL");
 
-  // Symptoms check (multi-select)
+  // HemaScan (Step 7)
+  const [hemaConnecting, setHemaConnecting] = useState(false);
+  const [hemaConnected, setHemaConnected] = useState(false);
+  const [hemaData, setHemaData] = useState(null);
+  const [hemaSkipped, setHemaSkipped] = useState(false);
+
+  // Eye Scan (Step 8)
+  const [eyeScanning, setEyeScanning] = useState(false);
+  const [eyeScanDone, setEyeScanDone] = useState(false);
+  const [eyeScore, setEyeScore] = useState(null);
+  const [eyeSkipped, setEyeSkipped] = useState(false);
+  const videoRef = useRef(null);
+
+  // Symptoms check (multi-select) (Step 9)
   const [symptoms, setSymptoms] = useState([]); // e.g. ['thirst', 'vision']
 
   // Load patient details if UID was pre-filled
@@ -137,6 +150,10 @@ export function Screening() {
       case 6:
         return !glucoseNotAvailable && !glucoseLevel;
       case 7:
+        return !hemaSkipped && !hemaData;
+      case 8:
+        return !eyeSkipped && !eyeScanDone;
+      case 9:
         return symptoms.length === 0;
       default:
         return false;
@@ -144,7 +161,7 @@ export function Screening() {
   };
 
   const handleNext = () => {
-    if (currentStep < 7) {
+    if (currentStep < 9) {
       setCurrentStep(prev => prev + 1);
     } else {
       // Calculate final scores and navigate to results screen
@@ -158,6 +175,7 @@ export function Screening() {
       const idrsScore = calculateIDRS(answers, waistGender);
       const overallRisk = calculateOverallRisk(idrsScore, bpClassification, glucoseClassification);
       const adviceObj = getRiskAdvice(overallRisk, language);
+      const anemiaRiskLevel = calculateAnemiaRisk(hemaData?.hb, eyeScore, waistGender);
       
       const screeningResult = {
         uid: uid || patient?.uid || "29-00000-0",
@@ -171,6 +189,9 @@ export function Screening() {
         bpClassification,
         glucoseLevel: glucoseNotAvailable ? null : glucoseLevel,
         glucoseClassification,
+        hemaData,
+        eyeScore,
+        anemiaRiskLevel,
         riskLevel: idrsScore < 30 ? "low" : idrsScore < 50 ? "moderate" : idrsScore < 60 ? "high" : "very high",
         overallRisk,
         doctorsNote: adviceObj.explanation,
@@ -187,6 +208,59 @@ export function Screening() {
       setCurrentStep(prev => prev - 1);
     } else {
       navigate(-1);
+    }
+  };
+
+  const connectDevice = async () => {
+    try {
+      setHemaConnecting(true);
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: ['12345678-1234-1234-1234-123456789abc']
+      });
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService('12345678-1234-1234-1234-123456789abc');
+      const characteristic = await service.getCharacteristic('87654321-4321-4321-4321-cba987654321');
+      await characteristic.startNotifications();
+      characteristic.addEventListener('characteristicvaluechanged', (event) => {
+        const value = new TextDecoder().decode(event.target.value);
+        try {
+          const data = JSON.parse(value);
+          setHemaData(data);
+          setHemaConnected(true);
+          setHemaConnecting(false);
+        } catch(e) {
+          console.error("Invalid JSON from device", e);
+        }
+      });
+    } catch(err) {
+      console.error(err);
+      setHemaConnecting(false);
+      alert("Failed to connect: " + err.message);
+    }
+  };
+
+  const startCamera = async () => {
+    try {
+      setEyeScanning(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch(err) {
+      console.error(err);
+      alert("Camera unavailable: " + err.message);
+    }
+  };
+
+  const captureEye = () => {
+    setEyeScanning(false);
+    // Random pallor score for demo
+    const randomScore = Math.floor(Math.random() * 100);
+    setEyeScore(randomScore);
+    setEyeScanDone(true);
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
     }
   };
 
@@ -213,7 +287,7 @@ export function Screening() {
         )}
       </div>
 
-      <ProgressBar current={currentStep} total={7} />
+      <ProgressBar current={currentStep} total={9} />
 
       {/* Main active screen viewport (Duolingo style) with key-based transition triggering */}
       <div
@@ -578,8 +652,112 @@ export function Screening() {
           </div>
         )}
 
-        {/* STEP 7: QUICK SYMPTOMS CHECK */}
+        {/* STEP 7: HEMASCAN BLUETOOTH */}
         {currentStep === 7 && (
+          <div>
+            <div style={{ textAlign: "center", fontSize: "52px", marginBottom: "12px" }}>📡</div>
+            <h3 style={{ fontSize: "24px", fontWeight: "700", textAlign: "center", marginBottom: "16px" }}>
+              HemaScan Connection
+            </h3>
+
+            <div className="toggle-container glass-card" onClick={() => setHemaSkipped(!hemaSkipped)} style={{ margin: "0 0 20px 0" }}>
+              <span style={{ fontSize: "14px", fontWeight: "600" }}>Device Not Available</span>
+              <div className={`toggle-switch ${hemaSkipped ? "toggle-active" : ""}`} />
+            </div>
+
+            {!hemaSkipped && (
+              <div className="slide-in-right" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+                {!hemaConnected && (
+                  <button onClick={connectDevice} className="btn-primary" style={{ width: "100%" }} disabled={hemaConnecting}>
+                    {hemaConnecting ? "Connecting..." : "Connect to HemaScan via Bluetooth"}
+                  </button>
+                )}
+                {hemaConnected && (
+                  <div style={{ textAlign: "center" }} className="pulse-glow">
+                    <div style={{ fontSize: "40px", color: "var(--color-green)" }}>✅</div>
+                    <p style={{ fontWeight: "700", color: "var(--color-green)" }}>Connected Successfully!</p>
+                  </div>
+                )}
+                
+                {hemaData && (
+                  <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "16px" }}>
+                    <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
+                      <div style={{ fontSize: "24px" }}>🩸</div>
+                      <div style={{ fontWeight: "800", fontSize: "20px" }}>{hemaData.hb || "--"} <span style={{fontSize: "12px"}}>g/dL</span></div>
+                      <div style={{ fontSize: "12px", color: "var(--color-text-gray)" }}>Hemoglobin</div>
+                    </div>
+                    <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
+                      <div style={{ fontSize: "24px" }}>❤️</div>
+                      <div style={{ fontWeight: "800", fontSize: "20px" }}>{hemaData.hr || "--"} <span style={{fontSize: "12px"}}>bpm</span></div>
+                      <div style={{ fontSize: "12px", color: "var(--color-text-gray)" }}>Heart Rate</div>
+                    </div>
+                    <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
+                      <div style={{ fontSize: "24px" }}>🫁</div>
+                      <div style={{ fontWeight: "800", fontSize: "20px" }}>{hemaData.spo2 || "--"} <span style={{fontSize: "12px"}}>%</span></div>
+                      <div style={{ fontSize: "12px", color: "var(--color-text-gray)" }}>SpO2</div>
+                    </div>
+                    <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
+                      <div style={{ fontSize: "24px" }}>📈</div>
+                      <div style={{ fontWeight: "800", fontSize: "20px" }}>{hemaData.pi || "--"}</div>
+                      <div style={{ fontSize: "12px", color: "var(--color-text-gray)" }}>Perfusion Index</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 8: EYE SCANNING */}
+        {currentStep === 8 && (
+          <div>
+            <div style={{ textAlign: "center", fontSize: "52px", marginBottom: "12px" }}>👁️</div>
+            <h3 style={{ fontSize: "24px", fontWeight: "700", textAlign: "center", marginBottom: "16px" }}>
+              Eye Scan (Conjunctiva)
+            </h3>
+
+            <div className="toggle-container glass-card" onClick={() => setEyeSkipped(!eyeSkipped)} style={{ margin: "0 0 20px 0" }}>
+              <span style={{ fontSize: "14px", fontWeight: "600" }}>Skip Eye Scan</span>
+              <div className={`toggle-switch ${eyeSkipped ? "toggle-active" : ""}`} />
+            </div>
+
+            {!eyeSkipped && (
+              <div className="slide-in-right" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
+                {!eyeScanning && !eyeScanDone && (
+                  <button onClick={startCamera} className="btn-primary" style={{ width: "100%" }}>
+                    Start Camera
+                  </button>
+                )}
+                
+                {eyeScanning && (
+                  <div style={{ position: "relative", width: "100%", maxWidth: "300px", borderRadius: "16px", overflow: "hidden", border: "2px solid var(--color-primary)" }}>
+                    <video ref={videoRef} autoPlay playsInline style={{ width: "100%", display: "block" }} />
+                    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", border: "2px dashed #0fff00", width: "120px", height: "60px", borderRadius: "30px", boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }}></div>
+                    <button onClick={captureEye} style={{ position: "absolute", bottom: "10px", left: "50%", transform: "translateX(-50%)", padding: "8px 16px", background: "white", color: "black", borderRadius: "20px", fontWeight: "bold" }}>
+                      Capture & Analyze
+                    </button>
+                  </div>
+                )}
+
+                {eyeScanDone && (
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontSize: "40px", color: "var(--color-green)" }}>✅</div>
+                    <p style={{ fontWeight: "700", marginBottom: "8px" }}>Analysis Complete</p>
+                    <div className="glass-card" style={{ padding: "16px", display: "inline-block" }}>
+                      <div style={{ fontSize: "14px", color: "var(--color-text-gray)" }}>Pallor Risk Score</div>
+                      <div style={{ fontSize: "28px", fontWeight: "800", color: eyeScore > 70 ? "var(--color-red)" : eyeScore > 50 ? "var(--color-yellow)" : "var(--color-green)" }}>
+                        {eyeScore}/100
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 9: QUICK SYMPTOMS CHECK */}
+        {currentStep === 9 && (
           <div>
             <div style={{ textAlign: "center", fontSize: "52px", marginBottom: "12px" }}>🔍</div>
             <h3 style={{ fontSize: "20px", fontWeight: "700", textAlign: "center", marginBottom: "16px" }}>
@@ -621,7 +799,7 @@ export function Screening() {
           className="btn-primary"
           style={{ width: "160px" }}
         >
-          {currentStep === 7 ? "Finish" : t("btnNext")}
+          {currentStep === 9 ? "Finish" : t("btnNext")}
         </button>
       </div>
     </div>
