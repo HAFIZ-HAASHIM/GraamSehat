@@ -10,10 +10,10 @@ Write-Host ""
 
 $apps = @(
     @{ Name = "IVR Server"; Path = "IVR"; Port = 5000; Command = "npm start"; Url = "http://127.0.0.1:5000" },
-    @{ Name = "Landing Page"; Path = "Landing Page"; Port = 3000; Command = "npm run dev -- --port 3000 --host 127.0.0.1"; Url = "http://127.0.0.1:3000" },
-    @{ Name = "Villager App"; Path = "Villager App"; Port = 3001; Command = "npm run dev -- --port 3001 --host 127.0.0.1"; Url = "http://127.0.0.1:3001" },
-    @{ Name = "ASHA Worker"; Path = "ASHA Worker"; Port = 3002; Command = "npm run dev -- --port 3002 --host 127.0.0.1"; Url = "http://127.0.0.1:3002" },
-    @{ Name = "Admin Dashboard"; Path = "Admin Dashboard"; Port = 3003; Command = "npm run dev -- --port 3003 --host 127.0.0.1"; Url = "http://127.0.0.1:3003" }
+    @{ Name = "Landing Page"; Path = "Landing Page"; Port = 3000; Command = "npx vite --port 3000 --host 127.0.0.1"; Url = "http://127.0.0.1:3000" },
+    @{ Name = "Villager App"; Path = "Villager App"; Port = 3001; Command = "npx vite --port 3001 --host 127.0.0.1"; Url = "http://127.0.0.1:3001" },
+    @{ Name = "ASHA Worker"; Path = "ASHA Worker"; Port = 3002; Command = "npx vite --port 3002 --host 127.0.0.1"; Url = "http://127.0.0.1:3002" },
+    @{ Name = "Admin Dashboard"; Path = "Admin Dashboard"; Port = 3003; Command = "npx vite --port 3003 --host 127.0.0.1"; Url = "http://127.0.0.1:3003" }
 )
 
 Write-Host "----------------------------------------------------------" -ForegroundColor Yellow

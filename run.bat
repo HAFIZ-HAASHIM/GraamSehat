@@ -51,19 +51,19 @@ start "GraamSehat - IVR Server" /D "IVR" cmd /k "npm start"
 
 :: Start Landing Page
 echo Starting Landing Page on http://127.0.0.1:3000 ...
-start "GraamSehat - Landing Page" /D "Landing Page" cmd /k "npm run dev -- --port 3000 --host 127.0.0.1"
+start "GraamSehat - Landing Page" /D "Landing Page" cmd /k "npx vite --port 3000 --host 127.0.0.1"
 
 :: Start Villager App
 echo Starting Villager App on http://127.0.0.1:3001 ...
-start "GraamSehat - Villager App" /D "Villager App" cmd /k "npm run dev -- --port 3001 --host 127.0.0.1"
+start "GraamSehat - Villager App" /D "Villager App" cmd /k "npx vite --port 3001 --host 127.0.0.1"
 
 :: Start ASHA Worker App
 echo Starting ASHA Worker App on http://127.0.0.1:3002 ...
-start "GraamSehat - ASHA Worker" /D "ASHA Worker" cmd /k "npm run dev -- --port 3002 --host 127.0.0.1"
+start "GraamSehat - ASHA Worker" /D "ASHA Worker" cmd /k "npx vite --port 3002 --host 127.0.0.1"
 
 :: Start Admin Dashboard
 echo Starting Admin Dashboard on http://127.0.0.1:3003 ...
-start "GraamSehat - Admin Dashboard" /D "Admin Dashboard" cmd /k "npm run dev -- --port 3003 --host 127.0.0.1"
+start "GraamSehat - Admin Dashboard" /D "Admin Dashboard" cmd /k "npx vite --port 3003 --host 127.0.0.1"
 
 echo.
 echo Waiting 5 seconds for dev servers to initialize...
