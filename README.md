@@ -37,11 +37,8 @@ The GraamSehat suite incorporates premium, high-fidelity design standards tailor
 
 Check out the high-fidelity UI and smooth interactions of the GraamSehat suite:
 
-### Video Demonstration
-<video width="100%" controls>
-  <source src="./Artifacts/Screen%20Recording%202026-07-18%20152543%20(4).mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+### 📞 IVR System - Video Demonstration
+<video src="https://github.com/HAFIZ-HAASHIM/GraamSehat/raw/master/Artifacts/Screen%20Recording%202026-07-18%20152543%20(4).mp4" width="100%" controls="controls"></video>
 
 ### Application Screenshots
 <details>
