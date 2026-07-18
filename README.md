@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="Artifacts/Logo.PNG" alt="GraamSehat Logo" width="120" style="margin-bottom: 20px" />
   <h1>💖 GraamSehat (ग्राम सेहत)</h1>
   <p><b>Sleek, Premium, High-Fidelity Decentralized Rural Digital Healthcare Suite</b></p>
 </div>
@@ -47,15 +48,23 @@ Check out the high-fidelity UI and smooth interactions of the GraamSehat suite:
   <summary><b>Click to view gallery</b></summary>
   
   <p align="center">
-    <img src="Artifacts/Screenshot%202026-07-18%20152840.png" width="48%" style="margin-bottom:10px" />
+    <img src="Artifacts/IMG_7979.png" width="48%" style="margin-bottom:10px" />
+    <img src="Artifacts/IMG_7980.png" width="48%" style="margin-bottom:10px" />
+  </p>
+
+  <p align="center">
+    <img src="Artifacts/Screenshot%202026-07-18%20152840.png" width="100%" style="margin-bottom:10px" />
+    <img src="Artifacts/Screenshot%202026-07-18%20154847.png" width="100%" style="margin-bottom:10px" />
+    <img src="Artifacts/Screenshot%202026-07-18%20154924.png" width="100%" style="margin-bottom:10px" />
+    <img src="Artifacts/Screenshot%202026-07-18%20154528.png" width="100%" style="margin-bottom:10px" />
+  </p>
+
+  <p align="center">
     <img src="Artifacts/Screenshot%202026-07-18%20152929.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20154329.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20154416.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20154507.png" width="48%" style="margin-bottom:10px" />
-    <img src="Artifacts/Screenshot%202026-07-18%20154528.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20154606.png" width="48%" style="margin-bottom:10px" />
-    <img src="Artifacts/Screenshot%202026-07-18%20154847.png" width="48%" style="margin-bottom:10px" />
-    <img src="Artifacts/Screenshot%202026-07-18%20154924.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20155556.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20155712.png" width="48%" style="margin-bottom:10px" />
     <img src="Artifacts/Screenshot%202026-07-18%20155732.png" width="48%" style="margin-bottom:10px" />
